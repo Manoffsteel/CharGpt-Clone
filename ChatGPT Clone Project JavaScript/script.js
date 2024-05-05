@@ -5,7 +5,7 @@ const themeButton = document.querySelector("#theme-btn");
 const deleteButton = document.querySelector("#delete-btn");
 
 let userText = null;
- const API_KEY = "Apna api key daal lena "; // Paste your API key here
+ const API_KEY = "APNA KEY BANA KAR DAALO YAHA"; // Paste your API key here 
 
 
 const loadDataFromLocalstorage = () => {
@@ -31,49 +31,51 @@ const createChatElement = (content, className) => {
     chatDiv.innerHTML = content;
     return chatDiv; // Return the created chat div
 }
+const getChatResponse = (incomingChatDiv) => {
+    const API_URL = "https://api.openai.com/v1/chat/completions";
+ // YEH TIME TO TIME CHANGE HO SKTA HA ENDPOINTS TO EDHR LENA official documentation SE OPENAI KA
 
-const getChatResponse = async (incomingChatDiv) => {
-     const API_URL = "https://api.openai.com/v1/chat/completions";
-    //  yeh time to time change hota ha esko apna Documentation padh kr update krlena endpoints hai chat ka
-    
     const pElement = document.createElement("p");
 
-    // Define the properties and data for the API request
     const requestOptions = {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-             "Authorization": `Bearer ${API_KEY}`
+            "Authorization": `Bearer ${API_KEY}`
             
         },
         body: JSON.stringify({
-            model: "text-davinci-003",
+            model: "gpt-3.5-turbo",
+         // current model CHECK KRKE DAALNA JRURI NHI YHI RHEGA
             prompt: userText,
             max_tokens: 2048,
             temperature: 0.2,
             n: 1,
             stop: null
         })
-    }
+    };
 
-
-    // Send POST request to API, get response and set the response as paragraph element text
-    try {
-        const response = await (await fetch(API_URL, requestOptions)).json();
-        pElement.textContent = response.choices[0].text.trim();
-    } catch (error) { // Add error class to the paragraph element and set error text
-        pElement.classList.add("error");
-        pElement.textContent = "Oops! Something went wrong while retrieving the response. Please try again.";
-    }
-
-    // Remove the typing animation, append the paragraph element and save the chats to local storage
-    incomingChatDiv.querySelector(".typing-animation").remove();
-    incomingChatDiv.querySelector(".chat-details").appendChild(pElement);
-    localStorage.setItem("all-chats", chatContainer.innerHTML);
-    chatContainer.scrollTo(0, chatContainer.scrollHeight);
-}
-
-   
+    return new Promise((resolve, reject) => {
+        fetch(API_URL, requestOptions)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // Log the response data
+                if (data.choices && data.choices.length > 0 && data.choices[0].text) {
+                    pElement.textContent = data.choices[0].text.trim();
+                    resolve(); // Resolve the promise when response is fetched
+                } else {
+                    pElement.classList.add("error");
+                    pElement.textContent = "Oops! Unexpected response from the API.";
+                    reject("Unexpected response from the API");
+                }
+            })
+            .catch(error => {
+                pElement.classList.add("error");
+                pElement.textContent = "Oops! Something went wrong while retrieving the response. Please try again.";
+                reject(error); // Reject the promise on error
+            });
+    });
+};
 
 const copyResponse = (copyBtn) => {
     // Copy the text content of the response to the clipboard
